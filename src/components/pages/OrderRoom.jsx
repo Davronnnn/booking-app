@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { roomActions } from '../../store/room-slice';
 import Button from '../Ui/Button';
@@ -15,6 +15,34 @@ const OrderRoom = () => {
 	const [surName, setSurname] = useState('');
 	const [roomNumber, setRoomNumber] = useState('');
 	const [bookingDate, setBookingDate] = useState('');
+
+	console.log(rooms);
+	useEffect(() => {
+		const sendRoomData = async () => {
+			dispatch(roomActions.fetchRoomsRequest());
+			const response = await fetch(
+				'https://react-http-34226-default-rtdb.firebaseio.com/rooms.json',
+				{
+					method: 'Put',
+					body: JSON.stringify(rooms),
+					headers: {
+						'Content-Type': 'application/json',
+					},
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error('Something went wrong');
+			}
+			const responseData = await response.json();
+
+			dispatch(roomActions.fetchRoomsSuccess(responseData));
+		};
+
+		sendRoomData().catch((err) => {
+			dispatch(roomActions.fetchRoomsFailure(err));
+		});
+	}, [rooms, dispatch]);
 
 	const handleSubmit = (e) => {
 		setError(false);
