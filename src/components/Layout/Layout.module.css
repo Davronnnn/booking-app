@@ -1,0 +1,24 @@
+.layout {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	grid-template-areas:
+		'header header header'
+		'sidebar content content';
+}
+.header {
+	grid-area: header;
+	display: flex;
+	align-items: center;
+}
+.header h1 {
+	margin: 0;
+	padding: 0;
+	font-size: 1.5rem;
+	font-weight: bold;
+}
+.sidebar {
+	grid-area: sidebar;
+}
+.content {
+	grid-area: content;
+}
