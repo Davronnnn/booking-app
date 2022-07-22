@@ -3,23 +3,54 @@ import { useSelector, useDispatch } from 'react-redux';
 import { roomActions } from '../../store/room-slice';
 import Button from '../Ui/Button';
 import Input from '../Ui/Input';
+import Notification from '../Ui/Notification';
 
 const OrderRoom = () => {
 	const dispatch = useDispatch();
 
 	const rooms = useSelector((state) => state.room.rooms);
 	const orderedRooms = useSelector((state) => state.room.orderedRooms);
+	const notification = useSelector((state) => state.room.notification);
+	const error = rooms.error;
 
 	// states for form
-	const [error, setError] = useState(false);
+
 	const [surName, setSurname] = useState('');
 	const [roomNumber, setRoomNumber] = useState('');
 	const [bookingDate, setBookingDate] = useState('');
 
 	console.log(rooms);
 	useEffect(() => {
+		//getting data from server  it isn't do anything (in our project there is no functionality for this) only get request from server.
+		const getRooms = async () => {
+			const response = await fetch(
+				'https://react-http-34226-default-rtdb.firebaseio.com/rooms.json'
+			);
+
+			const data = await response.json();
+			console.log(data);
+		};
+		getRooms();
+	}, [rooms, dispatch]);
+
+	const handleSubmit = (e) => {
+		e.preventDefault();
+
+		const newRoom = {
+			surName,
+			roomNumber,
+			bookingDate,
+		};
 		const sendRoomData = async () => {
-			dispatch(roomActions.fetchRoomsRequest());
+			dispatch(
+				roomActions.showNotification({
+					status: 'pending',
+					message: 'Loading rooms...',
+					title: 'Loading',
+				})
+			);
+
+			// dummy api only put all rooms
 			const response = await fetch(
 				'https://react-http-34226-default-rtdb.firebaseio.com/rooms.json',
 				{
@@ -34,36 +65,27 @@ const OrderRoom = () => {
 			if (!response.ok) {
 				throw new Error('Something went wrong');
 			}
-			const responseData = await response.json();
 
-			dispatch(roomActions.fetchRoomsSuccess(responseData));
-		};
+			// check if room is already booked
+			orderedRooms.map((room) => {
+				if (
+					room.bookingDate === bookingDate &&
+					room.roomNumber === roomNumber
+				) {
+					alert('Room is already booked, try another date');
+				}
+			});
 
-		sendRoomData().catch((err) => {
-			dispatch(roomActions.fetchRoomsFailure(err));
-		});
-	}, [rooms, dispatch]);
-
-	const handleSubmit = (e) => {
-		setError(false);
-
-		e.preventDefault();
-		const newRoom = {
-			surName,
-			roomNumber,
-			bookingDate,
-		};
-
-		// check if room is already booked
-		orderedRooms.map((room) => {
-			if (
-				room.bookingDate === bookingDate &&
-				room.roomNumber === roomNumber
-			) {
-				alert('Room is already booked, try another date');
-				setError(true);
+			if (error) {
+				dispatch(
+					roomActions.showNotification({
+						status: 'error',
+						message: 'Sending rooms failed	!',
+						title: 'Error',
+					})
+				);
 			}
-		});
+		};
 
 		// check if room is available
 		if (!error) {
@@ -72,6 +94,22 @@ const OrderRoom = () => {
 			setRoomNumber('');
 			setBookingDate('');
 
+			sendRoomData().catch((err) => {
+				dispatch(
+					roomActions.showNotification({
+						status: 'error',
+						message: 'Sending rooms failed	!',
+						title: 'Error',
+					})
+				);
+			});
+			dispatch(
+				roomActions.showNotification({
+					status: 'success',
+					message: 'Sending rooms successful',
+					title: 'Success',
+				})
+			);
 			alert('Room booked successfully');
 		}
 	};
@@ -108,6 +146,13 @@ const OrderRoom = () => {
 					<Button>Order</Button>
 				</form>
 			</div>
+			{notification && (
+				<Notification
+					status={notification.status}
+					message={notification.message}
+					title={notification.title}
+				/>
+			)}
 		</React.Fragment>
 	);
 };

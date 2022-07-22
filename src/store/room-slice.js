@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// dummy data we can get from the server
 const DUMMY_ROOMS = [
 	{
 		roomNumber: '1',
@@ -24,20 +25,16 @@ const roomSlice = createSlice({
 		error: null,
 		orderedRooms: [],
 		todayEmptyRooms: DUMMY_ROOMS.length,
+		notification: null,
 	},
 	reducers: {
-		fetchRoomsRequest: (state) => {
-			state.loading = true;
+		showNotification(state, action) {
+			state.notification = {
+				status: action.payload.status,
+				title: action.payload.title,
+				message: action.payload.message,
+			};
 		},
-		fetchRoomsSuccess: (state, action) => {
-			state.loading = false;
-			state.rooms = action.payload;
-		},
-		fetchRoomsFailure: (state, action) => {
-			state.loading = false;
-			state.error = action.payload;
-		},
-
 		getOrderedRooms: (state, action) => {
 			state.orderedRooms = action.payload;
 		},
@@ -47,6 +44,12 @@ const roomSlice = createSlice({
 
 			state.orderedRooms.push(newRoom);
 
+			if (
+				action.payload.bookingDate ===
+				new Date().toISOString().slice(0, 10)
+			) {
+				state.todayEmptyRooms--;
+			}
 			//! single room booking dates logic
 			// const room = state.rooms.find(
 			// 	(room) => room.roomNumber === newRoom.roomNumber
